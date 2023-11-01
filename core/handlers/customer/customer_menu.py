@@ -52,8 +52,8 @@ async def customer_make_order_handler(
 
 
 @router.callback_query(F.data == 'customer_my_orders')
-async def customer_my_orders_handler(call: types.CallbackQuery, user: User) -> None:
-    orders = get_orders(user.id, 'my', status='published')
+async def customer_my_orders_handler(call: types.CallbackQuery, user: User, session) -> None:
+    orders = get_orders(session, user.id, 'my', status='published')
     text = answer['my_orders_reply'] + get_orders_list_string(orders, mode="customer")
     await call.message.answer(
         text=text, reply_markup=get_orders_keyboard(orders, mode="customer")
@@ -125,11 +125,11 @@ async def customer_delete_published_order(call: types.CallbackQuery) -> None:
 
 
 @router.callback_query(F.data == 'customer_my_account')
-async def customer_my_account_handler(call: types.CallbackQuery, user: User) -> None:
+async def customer_my_account_handler(call: types.CallbackQuery, user: User, session) -> None:
     time_since_registration = get_time_since_registration(user.created_at)
     raiting = user.customer_rating if user.customer_rating else 'Ещё нет рейтинга'
     deals = answer["deals_as_customer"].format(
-        get_deals(user_id=user.id, mode="customer")
+        get_deals(user_id=user.id, mode="customer", session=session)
     )
     await call.message.answer(
         text=answer["my_account_reply"].format(

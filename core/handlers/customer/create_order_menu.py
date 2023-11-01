@@ -177,12 +177,12 @@ async def save_order_params_handler(
 
 @router.callback_query(F.data == 'publish')
 async def publish_order_handler(
-    call: types.CallbackQuery, state: FSMContext, user: User
+    call: types.CallbackQuery, state: FSMContext, user: User, session
 ) -> None:
     draft = get_customer_draft(user_id=user.id)
     condition = check_order_before_publish(draft)
     if isinstance(condition, bool):
-        await publish_order_to_db(draft, user)
+        await publish_order_to_db(draft, user, session)
         await send_order_text_to_customer(
             call=call,
             order=draft,
@@ -206,9 +206,9 @@ async def publish_order_handler(
 
 
 @router.callback_query(F.data.startswith('forward_order_'))
-async def forward_order_handler(call: types.CallbackQuery, bot: Bot) -> None:
+async def forward_order_handler(call: types.CallbackQuery, bot: Bot, session) -> None:
     order_id = int(call.data.split('_')[2])
-    await send_order_text_to_channel(bot, order_id)
+    await send_order_text_to_channel(bot, order_id, session)
     await call.message.edit_text(
         text=answer['forward_order_reply'].format(channel_link),
         reply_markup=back_button,
