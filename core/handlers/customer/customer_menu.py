@@ -1,6 +1,7 @@
 from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
 
+from core.controllers.application_controllers import get_applications
 from core.controllers.order_controllers import (
     delete_published_order,
     get_customer_draft,
@@ -62,9 +63,9 @@ async def customer_my_orders_handler(call: types.CallbackQuery, user: User, sess
 
 
 @router.callback_query(F.data.startswith('customer_get_order_info:'))
-async def customer_get_order_info_handler(call: types.CallbackQuery) -> None:
+async def customer_get_order_info_handler(call: types.CallbackQuery, session) -> None:
     order_id = int(call.data.split(":")[1])
-    order = get_order(order_id)
+    order = get_order(order_id, session)
     await call.message.edit_text(
         text=answer["read_order"].format(
             order.name, order.budget, order.description, order.link
@@ -96,13 +97,13 @@ async def customer_delete_published_order(call: types.CallbackQuery) -> None:
     )
 
 
-# @router.callback_query(F.data == 'customer_applications')
-# async def customer_applications_handler(
-#     call: types.CallbackQuery, state: FSMContext, bot: Bot
-# ) -> None:
-#     ...
-#
-#
+@router.callback_query(F.data == 'customer_applications')
+async def customer_applications_handler(
+    call: types.CallbackQuery, user: User, session
+) -> None:
+    applications = get_applications(session, mode='by_customer', customer_id=user.id)
+
+
 # @router.callback_query(F.data == 'customer_messages')
 # async def customer_messages_handler(
 #     call: types.CallbackQuery, state: FSMContext, bot: Bot

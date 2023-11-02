@@ -24,3 +24,13 @@ def get_customer_keyboard(balance: int) -> InlineKeyboardMarkup:
             ]
         ],
     )
+
+
+application_receive_buttons = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text='← Закрыть', callback_data='close'),
+            InlineKeyboardButton(text='🔼 Заявки', callback_data='customer_applications'),
+        ]
+    ]
+)

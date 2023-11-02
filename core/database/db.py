@@ -12,7 +12,7 @@ class DatabaseConnector:
 db = DatabaseConnector(url=db_string, echo=True)
 
 # from core.database.models import Base
-
+#
 # with db.session.begin():
-#   Base.metadata.drop_all(db.engine)
-#   Base.metadata.create_all(db.engine)
+#     Base.metadata.drop_all(db.engine)
+#     Base.metadata.create_all(db.engine)
