@@ -184,6 +184,15 @@ def save_params_to_draft(
         session.execute(order)
 
 
+def get_unapplied_orders(user_id: int, orders: list, applications: list) -> list:
+    orders_dict = {order.id: order for order in orders}
+    for appl in applications:
+        if appl.freelancer_id != user_id:
+            continue
+        del orders_dict[appl.order_id]
+    return list(orders_dict.keys())
+
+
 def get_orders_list_string(
     orders: list, mode: Literal['freelancer', 'customer']
 ) -> str:
@@ -198,4 +207,6 @@ def get_orders_list_string(
                 )
             case 'customer':
                 text += f"🌐 id{order.id} · <b>{order.name}</b> · <i>создан {created_at.humanize(locale='ru')}</i>\n\n"
+    if len(text) == 0:
+        text = "🌐 Пока нет активных заказов"
     return text
