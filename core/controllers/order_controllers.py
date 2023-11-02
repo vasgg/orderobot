@@ -9,8 +9,7 @@ from sqlalchemy import update
 
 from core.config import channel, valid_domains
 from core.database.db import db
-from core.database.models import Application, Order, User
-
+from core.database.models import Order, User
 from core.resources.dictionaries import answer
 
 
@@ -64,7 +63,7 @@ def check_order_before_publish(order: Order) -> Union[bool, NamedTuple]:
 async def publish_order_to_db(order: Order, user: User, session) -> None:
     update_order = (
         update(Order)
-        .where(Order.customer_id == user.id, Order.status == 'draft')
+        .filter(Order.customer_id == user.id, Order.status == 'draft')
         .values(
             name=order.name,
             budget=order.budget,
@@ -105,23 +104,20 @@ def get_orders(
 ) -> list[Order]:
     match mode:
         case 'all':
-            orders = session.query(Order).where(Order.status == status).all()
+            orders = session.query(Order).filter(Order.status == status).all()
         case "my":
             orders = (
                 session.query(Order)
-                .where(Order.customer_id == user_id, Order.status == status)
+                .filter(Order.customer_id == user_id, Order.status == status)
                 .all()
             )
         case 'others':
             orders = (
-                session.query(Order)
-                .join(Application)
-                .where(
+                session.query(Order).filter(
                     Order.customer_id != user_id,
                     Order.status == status,
-                    Application.freelancer_id != user_id,
-                ).all()
-            )
+                )
+            ).all()
         case _:
             raise ValueError(f'Unknown mode: {mode}')
     return orders
@@ -172,15 +168,15 @@ def save_params_to_draft(
     with db.session.begin() as session:
         match mode:
             case "name":
-                order = update(Order).where(Order.id == order_id).values(name=value)
+                order = update(Order).filter(Order.id == order_id).values(name=value)
             case "budget":
-                order = update(Order).where(Order.id == order_id).values(budget=value)
+                order = update(Order).filter(Order.id == order_id).values(budget=value)
             case "description":
                 order = (
-                    update(Order).where(Order.id == order_id).values(description=value)
+                    update(Order).filter(Order.id == order_id).values(description=value)
                 )
             case "link":
-                order = update(Order).where(Order.id == order_id).values(link=value)
+                order = update(Order).filter(Order.id == order_id).values(link=value)
         session.execute(order)
 
 

@@ -33,16 +33,14 @@ def get_deals(user_id: int, mode: Literal['customer', 'freelancer'], session) ->
         case 'customer':
             counter = (
                 session.query(Order)
-                .where(Order.customer_id == user_id)
-                .filter(Order.status == 'done')
+                .filter(Order.customer_id == user_id, Order.status == 'done')
                 .count()
             )
             return counter
         case 'freelancer':
             counter = (
                 session.query(Order)
-                .where(Order.worker_id == user_id)
-                .filter(Order.status == 'done')
+                .filter(Order.worker_id == user_id, Order.status == 'done')
                 .count()
             )
         case _:
@@ -59,7 +57,7 @@ def rename_user(telegram_id: int, new_username: str) -> None:
     with db.session.begin() as session:
         new_name = (
             update(User)
-            .where(User.telegram_id == telegram_id)
+            .filter(User.telegram_id == telegram_id)
             .values(fullname=new_username)
         )
         session.execute(new_name)
