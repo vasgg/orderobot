@@ -22,7 +22,7 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    telegram_id = mapped_column(BigInteger, nullable=False, unique=True)
+    telegram_id: Mapped[int] = mapped_column(BigInteger, nullable=False, unique=True)
     username: Mapped[str | None] = mapped_column(String(32))
     fullname: Mapped[str]
     balance: Mapped[int] = mapped_column(default=0)
@@ -73,6 +73,9 @@ class Application(Base):
     freelancer_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
     )
+    fee: Mapped[int | None] = mapped_column()
+    completion_days: Mapped[int | None] = mapped_column()
+    message: Mapped[str | None] = mapped_column(String(2083))
 
     order: Mapped["Order"] = relationship(
         "Order", foreign_keys=[order_id], backref="applications", lazy=False
@@ -81,39 +84,3 @@ class Application(Base):
         'User', foreign_keys=[freelancer_id], backref="applications", lazy=False
     )
 
-
-# class Dialog(Base):
-#     __tablename__ = "dialogs"
-#     applcation_id: Mapped[int] = mapped_column(
-#         ForeignKey("applications.id", ondelete="CASCADE"), nullable=False
-#     )
-
-
-# class Message(Base):
-#     __tablename__ = "messages"
-#     dialog_id: Mapped[int] = mapped_column(
-#         ForeignKey("dialogs.id", ondelete="CASCADE"), nullable=False
-#     )
-#     text: Mapped[str] = mapped_column(String(2083))
-
-
-# class Ticket(Base):
-#     __tablename__ = "tickets"
-#     order_id: Mapped[int] = mapped_column(
-#         ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
-#     )
-#     worker_id: Mapped[int] = mapped_column(
-#         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-#     )
-#     text: Mapped[str] = mapped_column(String(2083))
-
-
-# class Review(Base):
-#     __tablename__ = "reviews"
-#     order_id: Mapped[int] = mapped_column(
-#         ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
-#     )
-#     customer_review: Mapped[review]
-#     worker_review: Mapped[review]
-#     customer_rating: Mapped[float | None]
-#     worker_rating: Mapped[float | None]
