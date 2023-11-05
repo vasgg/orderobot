@@ -1,6 +1,7 @@
 from typing import Literal
 
-from arrow import arrow
+import arrow
+from sqlalchemy import Result, select
 
 from core.database.models import Application
 
@@ -34,7 +35,9 @@ from core.database.models import Application
 #         .all()
 #     )
 #     return applications
-def create_application(order_id: int, customer_id: int, freelancer_id: int, session) -> None:
+def create_application(
+    order_id: int, customer_id: int, freelancer_id: int, session
+) -> None:
     new_application = Application(
         order_id=order_id,
         customer_id=customer_id,
@@ -43,24 +46,31 @@ def create_application(order_id: int, customer_id: int, freelancer_id: int, sess
     session.add(new_application)
 
 
-def get_applications(session, mode: Literal['all', 'by_customer', 'by_worker', 'by_order'], customer_id: int = None,
-                     worker_id: int = None, order_id: int = None) -> list[Application]:
+async def get_applications(
+    session,
+    mode: Literal['all', 'by_customer', 'by_worker', 'by_order'],
+    customer_id: int = None,
+    worker_id: int = None,
+    order_id: int = None,
+) -> list[Application]:
     match mode:
         case 'all':
-            applications = session.query(Application).all()
+            query = select(Application)
         case 'by_customer':
-            applications = session.query(Application).filter(Application.customer_id == customer_id).all()
+            query = select(Application).filter(Application.customer_id == customer_id)
         case 'by worker':
-            applications = session.query(Application).filter(Application.freelancer == worker_id).all()
+            query = select(Application).filter(Application.freelancer == worker_id)
         case 'by_order':
-            applications = session.query(Application).filter(Application.order_id == order_id).all()
+            query = select(Application).filter(Application.order_id == order_id)
         case _:
             raise ValueError(f"Unknown mode: {mode}")
+    result = await session.execute(query)
+    applications = result.scalars().all()
     return applications
 
 
 def get_applications_list_string(
-        applications: list, mode: Literal['freelancer', 'customer']
+    applications: list, mode: Literal['freelancer', 'customer']
 ) -> str:
     text = ''
     for application in sorted(applications, key=lambda x: x.id, reverse=True):

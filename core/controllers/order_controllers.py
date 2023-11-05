@@ -5,18 +5,18 @@ from urllib.parse import urlparse
 from aiogram import Bot, types
 from aiogram.fsm.context import FSMContext
 import arrow
-from sqlalchemy import update
+from sqlalchemy import Result, delete, select, update
 
-from core.config import channel, valid_domains
+from core.config import settings, valid_domains
 from core.database.db import db
-from core.database.models import Order, User
+from core.database.models import Application, Order, User
 from core.resources.dictionaries import answer
 
 
 async def send_order_text_to_channel(bot: Bot, order_id: int, session) -> None:
-    order = get_order(order_id, session)
+    order = await get_order(order_id, session)
     await bot.send_message(
-        chat_id=channel,
+        chat_id=settings.CHANNEL_ID,
         text=answer["post_order"].format(
             order.id, order.name, order.budget, order.link, order.description
         ),
@@ -72,7 +72,7 @@ async def publish_order_to_db(order: Order, user: User, session) -> None:
             status='published',
         )
     )
-    session.execute(update_order)
+    await session.execute(update_order)
 
 
 def validate_url(url: str) -> bool:
@@ -81,17 +81,21 @@ def validate_url(url: str) -> bool:
     return any(domain.endswith(valid_domain) for valid_domain in valid_domains)
 
 
-def get_order(order_id: int, session) -> Order:
-    order = session.query(Order).filter(Order.id == order_id).first()
+async def get_order(order_id: int, session) -> Order:
+    query = select(Order).filter(Order.id == order_id)
+    result: Result = await session.execute(query)
+    order = result.scalar()
     return order
 
 
-def get_user(user_id: int, session) -> User:
-    user = session.query(User).filter(User.id == user_id).first()
+async def get_user(user_id: int, session) -> User:
+    query = select(User).filter(User.id == user_id)
+    result: Result = await session.execute(query)
+    user = result.scalar()
     return user
 
 
-def get_orders(
+async def get_orders(
     session,
     user_id: int,
     mode: Literal['all', 'my', 'others'],
@@ -104,57 +108,46 @@ def get_orders(
 ) -> list[Order]:
     match mode:
         case 'all':
-            orders = session.query(Order).filter(Order.status == status).all()
+            query = select(Order).filter(Order.customer_id == user_id)
         case "my":
-            orders = (
-                session.query(Order)
-                .filter(Order.customer_id == user_id, Order.status == status)
-                .all()
+            query = select(Order).filter(
+                Order.customer_id == user_id, Order.status == status
             )
         case 'others':
-            orders = (
-                session.query(Order).filter(
-                    Order.customer_id != user_id,
-                    Order.status == status,
-                )
-            ).all()
+            query = select(Order).filter(
+                Order.customer_id != user_id, Order.status == status
+            )
         case _:
             raise ValueError(f'Unknown mode: {mode}')
+    result = await session.execute(query)
+    orders = result.scalars().all()
     return orders
 
 
-def create_draft(user_id: int, session) -> Order:
+async def create_draft(user_id: int, session) -> Order:
     new_draft = Order(
         customer_id=user_id,
     )
     session.add(new_draft)
-    session.commit()
-    with db.session.begin() as session:
-        created_draft = (
-            session.query(Order)
-            .filter(Order.customer_id == user_id, Order.status == 'draft')
-            .first()
-        )
+    session.flush()
+    query = select(Order).filter(Order.customer_id == user_id, Order.status == 'draft')
+    result: Result = await session.execute(query)
+    created_draft = result.scalar()
     return created_draft
 
 
-def get_customer_draft(user_id: int) -> Order:
-    with db.session.begin() as session:
-        draft = (
-            session.query(Order)
-            .filter(Order.customer_id == user_id, Order.status == 'draft')
-            .first()
-        )
-        if not draft:
-            draft = create_draft(user_id, session)
-        return draft
+async def get_customer_draft(user_id: int, session) -> Order:
+    query = select(Order).filter(Order.customer_id == user_id, Order.status == 'draft')
+    result: Result = await session.execute(query)
+    draft = result.scalar()
+    if not draft:
+        draft = await create_draft(user_id, session)
+    return draft
 
 
-def delete_draft(user_id: int) -> None:
-    with db.session.begin() as session:
-        session.query(Order).filter(
-            Order.customer_id == user_id, Order.status == 'draft'
-        ).delete()
+async def delete_draft(user_id: int, session) -> None:
+    query = delete(Order).filter(Order.customer_id == user_id, Order.status == 'draft')
+    await session.execute(query)
 
 
 def delete_published_order(order_id: int) -> None:
@@ -162,25 +155,29 @@ def delete_published_order(order_id: int) -> None:
         session.query(Order).filter(Order.id == order_id).delete()
 
 
-def save_params_to_draft(
-    order_id: int, mode: Literal['name', 'budget', 'description', 'link'], value: str
+async def save_params_to_draft(
+    order_id: int,
+    mode: Literal['name', 'budget', 'description', 'link'],
+    value: str,
+    session,
 ) -> None:
-    with db.session.begin() as session:
-        match mode:
-            case "name":
-                order = update(Order).filter(Order.id == order_id).values(name=value)
-            case "budget":
-                order = update(Order).filter(Order.id == order_id).values(budget=value)
-            case "description":
-                order = (
-                    update(Order).filter(Order.id == order_id).values(description=value)
-                )
-            case "link":
-                order = update(Order).filter(Order.id == order_id).values(link=value)
-        session.execute(order)
+    match mode:
+        case "name":
+            order = update(Order).filter(Order.id == order_id).values(name=value)
+        case "budget":
+            order = update(Order).filter(Order.id == order_id).values(budget=value)
+        case "description":
+            order = update(Order).filter(Order.id == order_id).values(description=value)
+        case "link":
+            order = update(Order).filter(Order.id == order_id).values(link=value)
+        case _:
+            raise ValueError(f"Unknown mode: {mode}")
+    await session.execute(order)
 
 
-def get_unapplied_orders(user_id: int, orders: list, applications: list) -> list:
+def get_unapplied_orders(
+    user_id: int, orders: list[Order], applications: list[Application]
+) -> list:
     orders_dict = {order.id: order for order in orders}
     for appl in applications:
         if appl.freelancer_id != user_id:
@@ -198,7 +195,7 @@ def get_orders_list_string(
         match mode:
             case 'freelancer':
                 text += (
-                    f"🌐 <b>{order.name}</b> · <i>создан {created_at.humanize(locale='ru')}</i>\n"
+                    f"🌐 id{order.id} · <b>{order.name}</b> · <i>создан {created_at.humanize(locale='ru')}</i>\n"
                     f"💎 {order.budget}₽ · <i>бюджет проекта</i>\n\n"
                 )
             case 'customer':

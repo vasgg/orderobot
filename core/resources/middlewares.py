@@ -14,10 +14,10 @@ class SessionMiddleware(BaseMiddleware):
         event: Message,
         data: Dict[str, Any],
     ) -> Any:
-        with db.session.begin() as session:
+        async with db.session_factory.begin() as session:
             data['session'] = session
             res = await handler(event, data)
-            session.commit()
+            await session.commit()
             return res
 
 
@@ -29,7 +29,7 @@ class AuthMiddleware(BaseMiddleware):
         data: Dict[str, Any],
     ) -> Any:
         session = data['session']
-        user = get_user_from_db(event, session)
+        user = await get_user_from_db(event, session)
         data['user'] = user
 
         return await handler(event, data)

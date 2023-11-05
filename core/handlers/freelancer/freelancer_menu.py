@@ -1,8 +1,7 @@
-from aiogram import Bot, F, Router, types
+from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
 
 from core.controllers.application_controllers import (
-    create_application,
     get_applications,
 )
 from core.controllers.order_controllers import (
@@ -12,15 +11,13 @@ from core.controllers.order_controllers import (
     get_unapplied_orders,
     get_user,
 )
-from core.controllers.user_controllers import get_deals, get_time_since_registration
+from core.controllers.user_controllers import get_deals_counter, get_time_since_registration
 from core.database.models import User
 from core.keyboards.common_keyboards import (
     account_buttons,
     close_button,
-    get_order_actions_keyboard,
     get_orders_keyboard,
 )
-from core.keyboards.customer.customer_keyboard import application_receive_buttons
 from core.keyboards.freelancer.freelancer_keyboard import (
     get_freelancer_keyboard,
 )
@@ -47,10 +44,10 @@ async def freelancer_menu_handler(
 async def fl_find_order_handler(
     call: types.CallbackQuery, state: FSMContext, user: User, session
 ) -> None:
-    orders = get_orders(
+    orders = await get_orders(
         user_id=user.id, mode="others", status="published", session=session
     )
-    applications = get_applications(session, mode='all')
+    applications = await get_applications(session, mode='all')
     filtered_ids = get_unapplied_orders(user.id, orders, applications)
     filtered_orders = [order for order in orders if order.id in filtered_ids]
     text = answer["fl_find_orders_reply"] + get_orders_list_string(
@@ -62,49 +59,32 @@ async def fl_find_order_handler(
     await state.update_data(orders_list_message_id=orders_list.message_id)
     await call.answer()
 
-
-@router.callback_query(F.data.startswith('fl_get_order_info:'))
-async def fl_get_order_info_handler(call: types.CallbackQuery, session) -> None:
-    order_id = int(call.data.split(":")[1])
-    order = get_order(order_id, session=session)
-    await call.message.edit_text(
-        text=answer["read_order"].format(order.name, order.budget, order.description),
-        reply_markup=get_order_actions_keyboard(order.id, mode="freelancer"),
-    )
-    await call.answer()
-
-
-@router.callback_query(F.data.startswith('take_order:'))
-async def fl_get_order_handler(
-    call: types.CallbackQuery, user: User, session, bot: Bot
-) -> None:
-    order_id = int(call.data.split(":")[1])
-    order = get_order(order_id, session=session)
-    create_application(
-        order_id=order_id,
-        customer_id=order.customer_id,
-        freelancer_id=user.id,
-        session=session,
-    )
-    await call.message.edit_text(
-        text=answer["fl_take_order_reply"].format(order.name),
-        reply_markup=close_button
-        # reply_markup=get_order_actions_keyboard(order.id, mode="freelancer"),
-    )
-    user = get_user(user_id=order.customer_id, session=session)
-    await bot.send_message(
-        chat_id=user.telegram_id,
-        text=answer["fl_take_order_from_customer"].format(order.name),
-        reply_markup=application_receive_buttons,
-    )
-    await call.answer()
+    # order = get_order(order_id, session=session)
+    # create_application(
+    #     order_id=order_id,
+    #     customer_id=order.customer_id,
+    #     freelancer_id=user.id,
+    #     session=session,
+    # )
+    # await call.message.edit_text(
+    #     text=answer["fl_take_order_reply"].format(order.name),
+    #     reply_markup=close_button
+    #     # reply_markup=get_order_actions_keyboard(order.id, mode="freelancer"),
+    # )
+    # user = get_user(user_id=order.customer_id, session=session)
+    # await bot.send_message(
+    #     chat_id=user.telegram_id,
+    #     text=answer["fl_take_order_from_customer"].format(order.name),
+    #     reply_markup=application_receive_buttons,
+    # )
+    # await call.answer()
 
 
 @router.callback_query(F.data.startswith('customer_of_order:'))
 async def fl_get_customer_of_order_handler(call: types.CallbackQuery, session) -> None:
     order_id = int(call.data.split(":")[1])
-    order = get_order(order_id, session)
-    customer = get_user(order.customer_id, session)
+    order = await get_order(order_id, session)
+    customer = await get_user(order.customer_id, session)
     await call.message.answer(
         text=answer["customer_details"].format(
             customer.fullname,
@@ -112,7 +92,7 @@ async def fl_get_customer_of_order_handler(call: types.CallbackQuery, session) -
             customer.customer_rating
             if customer.customer_rating
             else "Ещё нет рейтинга",
-            get_deals(customer.id, mode="customer", session=session),
+            await get_deals_counter(customer.id, mode="customer", session=session),
         ),
         reply_markup=close_button,
     ),
@@ -160,7 +140,7 @@ async def my_account_handler(call: types.CallbackQuery, user: User, session) -> 
     time_since_registration = get_time_since_registration(user.created_at)
     rating = user.freelance_rating if user.freelance_rating else "Ещё нет рейтинга"
     deals = answer["deals_as_freelancer"].format(
-        get_deals(user_id=user.id, mode="freelancer", session=session)
+        await get_deals_counter(user_id=user.id, mode="freelancer", session=session)
     )
     await call.message.answer(
         text=answer["my_account_reply"].format(

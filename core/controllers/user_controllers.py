@@ -2,9 +2,8 @@ from datetime import datetime
 from typing import Literal
 
 import arrow
-from sqlalchemy import update
+from sqlalchemy import Result, select, update
 
-from core.database.db import db
 from core.database.models import Order, User
 
 
@@ -19,32 +18,34 @@ def create_user_in_db(event, session) -> User:
     return new_user
 
 
-def get_user_from_db(event, session) -> User:
-    user = (
-        session.query(User).filter(User.telegram_id == event.from_user.id).first()
-    )
+async def get_user_from_db(event, session) -> User:
+    query = select(User).filter(User.telegram_id == event.from_user.id)
+    result: Result = await session.execute(query)
+    user = result.scalar()
     if not user:
         user = create_user_in_db(event, session)
     return user
 
 
-def get_deals(user_id: int, mode: Literal['customer', 'freelancer'], session) -> int:
+async def get_deals_counter(
+    user_id: int, mode: Literal['customer', 'freelancer'], session
+) -> int:
+    counter = 0
     match mode:
         case 'customer':
-            counter = (
-                session.query(Order)
-                .filter(Order.customer_id == user_id, Order.status == 'done')
-                .count()
+            query = select(Order).filter(
+                Order.customer_id == user_id, Order.status == 'done'
             )
-            return counter
         case 'freelancer':
-            counter = (
-                session.query(Order)
-                .filter(Order.worker_id == user_id, Order.status == 'done')
-                .count()
+            query = select(Order).filter(
+                Order.worker_id == user_id, Order.status == 'done'
             )
         case _:
             raise ValueError(f"Unknown mode: {mode}")
+    result = await session.execute(query)
+    orders = result.scalars().all()
+    if orders is not None:
+        counter = len(orders)
     return counter
 
 
@@ -53,11 +54,10 @@ def get_time_since_registration(created_at: datetime) -> str:
     return created_at.humanize(locale='ru')
 
 
-def rename_user(telegram_id: int, new_username: str) -> None:
-    with db.session.begin() as session:
-        new_name = (
-            update(User)
-            .filter(User.telegram_id == telegram_id)
-            .values(fullname=new_username)
-        )
-        session.execute(new_name)
+async def rename_user(telegram_id: int, new_username: str, session) -> None:
+    new_name = (
+        update(User)
+        .filter(User.telegram_id == telegram_id)
+        .values(fullname=new_username)
+    )
+    await session.execute(new_name)

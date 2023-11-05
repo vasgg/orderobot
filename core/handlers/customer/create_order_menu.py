@@ -1,7 +1,7 @@
 from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 
-from core.config import channel_link
+from core.config import settings
 from core.controllers.order_controllers import (
     check_order_before_publish,
     delete_draft,
@@ -34,24 +34,31 @@ async def change_order_params_handler(
     action = call.data.split("_")[2]
     match action:
         case 'name':
+            await call.message.delete()
             msg = await call.message.answer(
                 text=answer['change_order_name_reply'], reply_markup=back_button
             )
             await state.update_data(edit_order_message_id=msg.message_id)
             await state.set_state(States.change_order_name)
         case 'budget':
+            await call.message.delete()
+
             msg = await call.message.answer(
                 text=answer['change_order_budget_reply'], reply_markup=back_button
             )
             await state.update_data(edit_order_message_id=msg.message_id)
             await state.set_state(States.change_order_budget)
         case 'description':
+            await call.message.delete()
+
             msg = await call.message.answer(
                 text=answer['change_order_description_reply'], reply_markup=back_button
             )
             await state.update_data(edit_order_message_id=msg.message_id)
             await state.set_state(States.change_order_description)
         case 'link':
+            await call.message.delete()
+
             msg = await call.message.answer(
                 text=answer['change_order_link_reply'], reply_markup=back_button
             )
@@ -65,22 +72,24 @@ async def change_order_params_handler(
 @router.message(States.change_order_description)
 @router.message(States.change_order_link)
 async def check_order_params_handler(
-    message: types.Message, state: FSMContext, user: User
+    message: types.Message, state: FSMContext, user: User, session
 ) -> None:
     current_state = await state.get_state()
-    draft = get_customer_draft(user_id=user.id)
+    draft = await get_customer_draft(user_id=user.id, session=session)
     match current_state:
         case 'States:change_order_name':
+            await message.delete()
             new_name = message.text
-            save_params_to_draft(order_id=draft.id, mode='name', value=new_name)
+            await save_params_to_draft(order_id=draft.id, mode='name', value=new_name, session=session)
             await message.answer(
                 answer['check_param_reply'].format('Введено имя заказа', new_name),
                 reply_markup=change_order_params_keyboard('name'),
             )
             await state.set_state(States.new_order_draft)
         case 'States:change_order_budget':
+            await message.delete()
             new_budget = message.text
-            save_params_to_draft(order_id=draft.id, mode='budget', value=new_budget)
+            await save_params_to_draft(order_id=draft.id, mode='budget', value=new_budget, session=session)
             await message.answer(
                 answer['check_balance_reply'].format(
                     'Введён бюджет заказа', new_budget
@@ -89,9 +98,10 @@ async def check_order_params_handler(
             )
             await state.set_state(States.new_order_draft)
         case 'States:change_order_description':
+            await message.delete()
             new_description = message.text
-            save_params_to_draft(
-                order_id=draft.id, mode='description', value=new_description
+            await save_params_to_draft(
+                order_id=draft.id, mode='description', value=new_description, session=session
             )
             await message.answer(
                 answer['check_param_reply'].format(
@@ -101,9 +111,10 @@ async def check_order_params_handler(
             )
             await state.set_state(States.new_order_draft)
         case 'States:change_order_link':
+            await message.delete()
             new_link = message.text
             if validate_url(new_link):
-                save_params_to_draft(order_id=draft.id, mode='link', value=new_link)
+                await save_params_to_draft(order_id=draft.id, mode='link', value=new_link, session=session)
                 msg = await message.answer(
                     answer['check_param_reply'].format('Введён URL-адрес', new_link),
                     reply_markup=change_order_params_keyboard('link'),
@@ -111,7 +122,7 @@ async def check_order_params_handler(
                 await state.update_data(edit_order_confirm_id=msg.message_id)
                 await state.set_state(States.new_order_draft)
             else:
-                await message.answer(answer['incorrect_url_reply'])
+                await message.answer(answer['incorrect_url_reply'].format(message.text))
 
 
 @router.callback_query(F.data == 'back_to_order_menu')
@@ -131,10 +142,10 @@ async def back_to_order_handler(
 @router.callback_query(States.change_order_link)
 @router.callback_query(F.data.startswith('save_order_'))
 async def save_order_params_handler(
-    call: types.CallbackQuery, state: FSMContext, user: User, bot: Bot
+    call: types.CallbackQuery, state: FSMContext, user: User, bot: Bot, session
 ) -> None:
     action = call.data.split("_")[2]
-    draft = get_customer_draft(user_id=user.id)
+    draft = await get_customer_draft(user_id=user.id, session=session)
     data = await state.get_data()
     await bot.delete_message(
         chat_id=call.from_user.id, message_id=data['edit_order_message_id']
@@ -179,7 +190,7 @@ async def save_order_params_handler(
 async def publish_order_handler(
     call: types.CallbackQuery, state: FSMContext, user: User, session
 ) -> None:
-    draft = get_customer_draft(user_id=user.id)
+    draft = await get_customer_draft(user_id=user.id, session=session)
     condition = check_order_before_publish(draft)
     if isinstance(condition, bool):
         await publish_order_to_db(draft, user, session)
@@ -210,7 +221,7 @@ async def forward_order_handler(call: types.CallbackQuery, bot: Bot, session) ->
     order_id = int(call.data.split('_')[2])
     await send_order_text_to_channel(bot, order_id, session)
     await call.message.edit_text(
-        text=answer['forward_order_reply'].format(channel_link),
+        text=answer['forward_order_reply'].format(settings.CHANNEL_LINK),
         reply_markup=back_button,
     )
     await call.answer()
@@ -229,8 +240,8 @@ async def delete_draft_confirm_handler(
 
 
 @router.callback_query(F.data == 'confirm_delete_draft')
-async def delete_draft_handler(call: types.CallbackQuery, user: User) -> None:
-    delete_draft(user.id)
+async def delete_draft_handler(call: types.CallbackQuery, user: User, session) -> None:
+    await delete_draft(user.id, session)
     await call.message.edit_text(
         text=answer['customer_reply'], reply_markup=get_customer_keyboard(user.balance)
     )
