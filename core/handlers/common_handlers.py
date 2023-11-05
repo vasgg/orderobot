@@ -4,6 +4,7 @@ from aiogram.fsm.context import FSMContext
 
 from core.controllers.user_controllers import rename_user
 from core.database.models import User
+from core.keyboards.balance_keyboard import get_back_to_menu_and_pay_buttons
 from core.keyboards.common_keyboards import close_button, role_selector
 from core.resources.dictionaries import answer
 from core.resources.states import States
@@ -39,14 +40,36 @@ async def rename_account_handler(
 
 
 @router.message(States.rename_account)
-async def rename_account(message: types.Message, state: FSMContext, bot: Bot) -> None:
+async def rename_account(
+    message: types.Message, state: FSMContext, bot: Bot, session
+) -> None:
     new_name = message.text
-    rename_user(message.from_user.id, new_name)
+    await rename_user(message.from_user.id, new_name, session)
     await message.answer(
         text=answer['rename_account_success'].format(new_name),
         reply_markup=close_button,
     )
     data = await state.get_data()
+    await message.delete()
     await bot.delete_message(
         chat_id=message.from_user.id, message_id=data['rename_account_message_id']
     )
+
+
+@router.callback_query(F.data == 'user_balance')
+async def customer_balance_handler(call: types.CallbackQuery, state: FSMContext) -> None:
+    await call.message.answer(text=answer['user_balance_reply'])
+    await state.set_state(States.add_funds_to_balance)
+    await call.answer()
+
+
+@router.message(States.add_funds_to_balance)
+async def add_funds_to_balance_handler(message: types.Message, state: FSMContext) -> None:
+    try:
+        balance = int(message.text)
+        await message.answer(text=answer['check_balance_reply'].format('Вы хотите пополнить баланс на ', balance),
+                             reply_markup=await get_back_to_menu_and_pay_buttons(state))
+        await state.set_state()
+    except ValueError:
+        await message.delete()
+        await message.answer(text=answer['incorrect_balance_reply'].format(message.text))
