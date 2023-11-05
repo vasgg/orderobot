@@ -12,3 +12,6 @@ class States(StatesGroup):
     change_order_link = State()
     add_funds_to_balance = State()
     delete_published_order = State()
+    fl_appl_charge = State()
+    fl_appl_days = State()
+    fl_appl_message = State()
