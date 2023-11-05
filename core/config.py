@@ -1,27 +1,40 @@
 import logging
-import os
 
-from dotenv import load_dotenv
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings
 
-load_dotenv()
+
+class Settings(BaseSettings):
+    BOT_TOKEN: SecretStr
+    ADMIN_ID: int
+    CHANNEL_ID: int
+    CHANNEL_LINK: str
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_HOST: str
+    DB_PORT: int
+    DB_NAME: str
+    echo: bool = True
+
+    @property
+    def asyncpg_db_url(self) -> str:
+        return f'postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
+
+    class Config:
+        env_file = '.env'
+        env_file_encoding = 'utf-8'
+
+
+settings = Settings()
+
+valid_domains = ['drive.yandex.ru', 'drive.google.com']
 
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s: "
-           "%(filename)s: "
-           "%(levelname)s: "
-           "%(funcName)s(): "
-           "%(lineno)d:\t"
-           "%(message)s",
+    "%(filename)s: "
+    "%(levelname)s: "
+    "%(funcName)s(): "
+    "%(lineno)d:\t"
+    "%(message)s",
 )
-token = os.getenv('BOT_TOKEN')
-channel = os.getenv('CHANNEL_ID')
-channel_link = os.getenv('CHANNEL_LINK')
-admin = os.getenv('ADMIN_ID')
-pgip = os.getenv('POSTGRES_IP')
-pguser = os.getenv('POSTGRES_USER')
-pgpassword = os.getenv('POSTGRES_PASSWORD')
-pgdb = os.getenv('POSTGRES_DB')
-valid_domains = ['drive.yandex.ru', 'drive.google.com']
-
-db_string = f"postgresql+psycopg2://{pguser}:{pgpassword}@{pgip}:5432/{pgdb}"
