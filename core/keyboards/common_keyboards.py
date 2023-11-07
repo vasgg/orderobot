@@ -107,3 +107,41 @@ account_buttons = InlineKeyboardMarkup(
             ],
         ]
     )
+
+
+def delete_record_keyboad(
+    mode: Literal['draft', 'order', 'application'], record_id: int = None
+) -> InlineKeyboardMarkup:
+    buttons = []
+    match mode:
+        case 'draft':
+            buttons.append(
+                [
+                    InlineKeyboardButton(text='⌫ Отмена', callback_data='сlose'),
+                    InlineKeyboardButton(
+                        text='❌ Удалить', callback_data='confirm_delete_draft'
+                    ),
+                ]
+            )
+        case 'order':
+            buttons.append(
+                [
+                    InlineKeyboardButton(text='⌫ Отмена', callback_data='close'),
+                    InlineKeyboardButton(
+                        text='❌ Удалить',
+                        callback_data=f'delete_published_order:{record_id}',
+                    ),
+                ]
+            )
+        case 'application':
+            buttons.append(
+                [
+                    InlineKeyboardButton(text='⌫ Отмена', callback_data='close'),
+                    InlineKeyboardButton(
+                        text='❌ Удалить',
+                        callback_data=f'delete_application:{record_id}'
+                    )
+                ]
+            )
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    return keyboard

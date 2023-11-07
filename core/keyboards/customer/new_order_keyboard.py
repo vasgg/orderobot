@@ -75,39 +75,13 @@ def change_order_params_keyboard(
         ]
     )
 
-
-def delete_order_keyboad(mode: Literal['draft', 'order'], order_id: int = None) -> InlineKeyboardMarkup:
-    buttons = []
-    match mode:
-        case 'draft':
-            buttons.append(
-                [
-                    InlineKeyboardButton(
-                        text='☑️ Я уверен', callback_data='confirm_delete_draft'
-                    ),
-                    InlineKeyboardButton(text='❌ Отмена', callback_data='close'),
-                ]
-            )
-        case 'order':
-            buttons.append(
-                [
-                    InlineKeyboardButton(
-                        text='☑️ Я уверен', callback_data=f'delete_published_order:{order_id}'
-                    ),
-                    InlineKeyboardButton(text='❌ Отмена', callback_data='close'),
-                ]
-            )
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    return keyboard
-
-
-delete_draft_buttons = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text='☑️ Я уверен', callback_data='confirm_delete_draft'
-            ),
-            InlineKeyboardButton(text='❌ Отмена', callback_data='close'),
-        ]
-    ]
-)
+# delete_draft_buttons: InlineKeyboardMarkup = InlineKeyboardMarkup(
+#     inline_keyboard=[
+#         [
+#             InlineKeyboardButton(
+#                 text='☑️ Я уверен', callback_data='confirm_delete_draft'
+#             ),
+#             InlineKeyboardButton(text='❌ Отмена', callback_data='close'),
+#         ]
+#     ]
+# )

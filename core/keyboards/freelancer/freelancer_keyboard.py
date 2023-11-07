@@ -15,7 +15,7 @@ def get_freelancer_keyboard(balance: int) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text='💬 Сообщения', callback_data='fl_messages'),
             ],
             [
-                InlineKeyboardButton(text='ℹ️ Инструкция', callback_data='fl_help'),
+                InlineKeyboardButton(text='ℹ️ Инструкция', callback_data='information'),
                 InlineKeyboardButton(
                     text=f'💎 {balance} ₽', callback_data='user_balance'
                 ),
@@ -34,16 +34,22 @@ def get_freelancer_keyboard(balance: int) -> InlineKeyboardMarkup:
     )
 
 
-create_application_buttons = InlineKeyboardMarkup(
+def get_application_buttons(order_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='☑️ Отправить заявку', callback_data=f'fl_send_application:{order_id}'),
+                InlineKeyboardButton(text='← Отмена', callback_data='close')
+            ]
+        ]
+    )
+
+
+application_send_buttons = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(
-                text='☑️ Отправить заявку', callback_data='fl_send_application'
-            ),
-            InlineKeyboardButton(
-                text='🔼 Изменить заявку', callback_data='fl_applications'
-            ),
-        ],
-        [InlineKeyboardButton(text='← Закрыть', callback_data='close')],
+            InlineKeyboardButton(text='← Закрыть', callback_data='close'),
+            InlineKeyboardButton(text='🔼 Заявки', callback_data='fl_applications'),
+        ]
     ]
 )
