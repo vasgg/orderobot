@@ -83,4 +83,3 @@ class Application(Base):
     freelancer: Mapped["User"] = relationship(
         'User', foreign_keys=[freelancer_id], backref="applications", lazy=False
     )
-
