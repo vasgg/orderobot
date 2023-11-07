@@ -12,10 +12,6 @@ def get_applications_keyboard(
         match mode:
             case 'freelancer':
                 fl_buttons = [
-                    # InlineKeyboardButton(
-                        # text=f'ℹ️ детали · id{application.id}',
-                        # callback_data=f'fl_get_application_info:{application.id}',
-                    # ),
                     InlineKeyboardButton(
                         text=f'❌ удалить · id{application.id}',
                         callback_data=f'fl_del_application:{application.id}',

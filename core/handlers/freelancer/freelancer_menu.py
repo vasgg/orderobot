@@ -103,9 +103,9 @@ async def fl_applications_handler(
     )
     text = answer["fl_applications_reply"] + get_applications_list_string(applications=applications, mode="freelancer", orders=orders)
     await call.message.answer_photo(photo=types.FSInputFile(path='core/resources/pictures/applications.jpeg'),
-        caption=text,
-        reply_markup=get_applications_keyboard(orders=orders, applications=applications, mode="freelancer")
-    )
+                                    caption=text,
+                                    reply_markup=get_applications_keyboard(orders=orders, applications=applications, mode="freelancer")
+                                    )
     await call.answer()
 
 

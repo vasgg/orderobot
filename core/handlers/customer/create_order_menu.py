@@ -201,7 +201,6 @@ async def publish_order_handler(
             state=state,
             markup=get_publish_order_buttons(draft.id),
         )
-        # await state.clear()
     else:
         missing_conditions = []
         for field, value in condition._asdict().items():

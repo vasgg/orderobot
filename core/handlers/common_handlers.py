@@ -57,7 +57,7 @@ async def rename_account(
 
 
 @router.callback_query(F.data == 'user_balance')
-async def customer_balance_handler(call: types.CallbackQuery, state: FSMContext, bot: Bot) -> None:
+async def customer_balance_handler(call: types.CallbackQuery, state: FSMContext) -> None:
     await call.message.answer_photo(photo=types.FSInputFile(path='core/resources/pictures/balance.jpeg'),
                                     caption=answer['user_balance_reply'])
     await state.set_state(States.add_funds_to_balance)
