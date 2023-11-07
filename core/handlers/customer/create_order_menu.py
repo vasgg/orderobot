@@ -17,11 +17,11 @@ from core.keyboards.customer.customer_keyboard import get_customer_keyboard
 from core.keyboards.customer.new_order_keyboard import (
     back_button,
     change_order_params_keyboard,
-    delete_order_keyboad,
     get_publish_order_buttons,
     new_order_buttons,
 )
-from core.resources.dictionaries import answer
+from core.keyboards.common_keyboards import delete_record_keyboad
+from core.resources.dict import answer
 from core.resources.states import States
 
 router = Router()
@@ -233,7 +233,7 @@ async def delete_draft_confirm_handler(
 ) -> None:
     msg = await call.message.answer(
         text=answer['delete_draft_reply'],
-        reply_markup=delete_order_keyboad(mode='draft'),
+        reply_markup=delete_record_keyboad(mode='draft'),
     )
     await state.update_data(delete_order_message_id=msg.message_id)
     await call.answer()
