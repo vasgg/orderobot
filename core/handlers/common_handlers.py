@@ -6,7 +6,7 @@ from core.controllers.user_controllers import rename_user
 from core.database.models import User
 from core.keyboards.balance_keyboard import get_back_to_menu_and_pay_buttons
 from core.keyboards.common_keyboards import close_button, role_selector
-from core.resources.dictionaries import answer
+from core.resources.dict import answer
 from core.resources.states import States
 
 router = Router()
@@ -57,8 +57,9 @@ async def rename_account(
 
 
 @router.callback_query(F.data == 'user_balance')
-async def customer_balance_handler(call: types.CallbackQuery, state: FSMContext) -> None:
-    await call.message.answer(text=answer['user_balance_reply'])
+async def customer_balance_handler(call: types.CallbackQuery, state: FSMContext, bot: Bot) -> None:
+    await call.message.answer_photo(photo=types.FSInputFile(path='core/resources/pictures/balance.jpeg'),
+                                    caption=answer['user_balance_reply'])
     await state.set_state(States.add_funds_to_balance)
     await call.answer()
 
@@ -71,5 +72,10 @@ async def add_funds_to_balance_handler(message: types.Message, state: FSMContext
                              reply_markup=await get_back_to_menu_and_pay_buttons(state))
         await state.set_state()
     except ValueError:
-        await message.delete()
         await message.answer(text=answer['incorrect_balance_reply'].format(message.text))
+
+
+@router.callback_query(F.data == 'information')
+async def customer_help_handler(call: types.CallbackQuery) -> None:
+    await call.message.answer(answer['information'], reply_markup=close_button)
+    await call.answer()
