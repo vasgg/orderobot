@@ -8,9 +8,8 @@ import arrow
 from sqlalchemy import Result, delete, select, update
 
 from core.config import settings, valid_domains
-from core.database.db import db
 from core.database.models import Application, Order, User
-from core.resources.dictionaries import answer
+from core.resources.dict import answer
 
 
 async def send_order_text_to_channel(bot: Bot, order_id: int, session) -> None:
@@ -150,9 +149,9 @@ async def delete_draft(user_id: int, session) -> None:
     await session.execute(query)
 
 
-def delete_published_order(order_id: int) -> None:
-    with db.session.begin() as session:
-        session.query(Order).filter(Order.id == order_id).delete()
+async def delete_published_order(order_id: int, session) -> None:
+    query = delete(Order).filter(Order.id == order_id)
+    await session.execute(query)
 
 
 async def save_params_to_draft(
@@ -184,6 +183,17 @@ def get_unapplied_orders(
             continue
         del orders_dict[appl.order_id]
     return list(orders_dict.keys())
+
+
+def get_applied_orders(
+    user_id: int, orders: list[Order], applications: list[Application]
+) -> list[Order]:
+    orders_dict = {order.id: order for order in orders}
+    applied_orders = []
+    for appl in applications:
+        if appl.freelancer_id != user_id:
+            applied_orders.append(orders_dict[appl.order_id])
+    return applied_orders
 
 
 def get_orders_list_string(
