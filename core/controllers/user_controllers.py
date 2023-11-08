@@ -61,3 +61,12 @@ async def rename_user(telegram_id: int, new_username: str, session) -> None:
         .values(fullname=new_username)
     )
     await session.execute(new_name)
+
+
+async def add_balance_to_user(telegram_id: int, amount: int, session) -> None:
+    new_balance = (
+        update(User)
+        .filter(User.telegram_id == telegram_id)
+        .values(balance=amount)
+    )
+    await session.execute(new_balance)
