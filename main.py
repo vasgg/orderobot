@@ -4,10 +4,12 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from core.config import settings
 from core.resources.middlewares import AuthMiddleware, SessionMiddleware
 from core.handlers.common_handlers import router as basic_router
+from core.handlers.payment_handlers import router as payment_router
 from core.handlers.customer.customer_menu import router as customer_router
 from core.handlers.customer.create_order_menu import router as order_menu_router
-from core.handlers.freelancer.freelancer_menu import router as freelancer_router
-from core.handlers.freelancer.freelancer_application import router as freelancer_application_router
+from core.handlers.freelancer.freelancer_menu import router as fl_router
+from core.handlers.freelancer.freelancer_application import router as fl_application_router
+
 from core.resources.notify_admin import on_shutdown_notify, on_startup_notify
 
 
@@ -24,9 +26,10 @@ def main():
     dispatcher.include_routers(
         basic_router,
         customer_router,
-        freelancer_router,
-        freelancer_application_router,
+        fl_router,
+        fl_application_router,
         order_menu_router,
+        payment_router,
     )
 
     dispatcher.run_polling(bot)

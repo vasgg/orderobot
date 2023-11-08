@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     BOT_TOKEN: SecretStr
+    PAYMENT_TOKEN: SecretStr
     ADMIN_ID: int
     CHANNEL_ID: int
     CHANNEL_LINK: str
