@@ -67,9 +67,9 @@ async def customer_balance_handler(call: types.CallbackQuery, state: FSMContext)
 @router.message(States.add_funds_to_balance)
 async def add_funds_to_balance_handler(message: types.Message, state: FSMContext) -> None:
     try:
-        balance = int(message.text)
-        await message.answer(text=answer['check_balance_reply'].format('Вы хотите пополнить баланс на ', balance),
-                             reply_markup=await get_back_to_menu_and_pay_buttons(state))
+        amount = int(message.text)
+        await message.answer(text=answer['check_balance_reply'].format('Вы хотите пополнить баланс на ', amount),
+                             reply_markup=await get_back_to_menu_and_pay_buttons(state, amount))
         await state.set_state()
     except ValueError:
         await message.answer(text=answer['incorrect_balance_reply'].format(message.text))
