@@ -39,4 +39,3 @@ async def finish_payment(message: types.Message, state: FSMContext, user: User, 
     await message.bot.send_message(chat_id=message.from_user.id,
                                    text=answer['added_funds_reply'].format(data['added_funds_amount'], user.balance),
                                    reply_markup=close_button)
-
