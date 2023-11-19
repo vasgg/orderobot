@@ -20,7 +20,7 @@ async def begin_process_payment(call: types.CallbackQuery, state: FSMContext) ->
         title='Пополнение баланса бота',
         description='Начисление на ваш баланс в боте указанной суммы в рублях',
         payload='test payment from Youkassa',
-        provider_token=settings.PAYMENT_TOKEN.get_secret_value(),
+        provider_token=settings.PAYMASER_TOKEN.get_secret_value(),
         currency='RUB',
         prices=[price],
     )

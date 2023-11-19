@@ -6,7 +6,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     BOT_TOKEN: SecretStr
-    PAYMENT_TOKEN: SecretStr
+    PAYMASER_TOKEN: SecretStr
+    YOUKASSA_TOKEN: SecretStr
     ADMIN_ID: int
     CHANNEL_ID: int
     CHANNEL_LINK: str
@@ -19,7 +20,8 @@ class Settings(BaseSettings):
 
     @property
     def asyncpg_db_url(self) -> str:
-        return f'postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
+        # return f'postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
+        return f'postgresql+asyncpg://{self.DB_USER}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
 
     class Config:
         env_file = '.env'
