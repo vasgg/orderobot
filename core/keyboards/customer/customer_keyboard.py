@@ -14,7 +14,7 @@ def get_customer_keyboard(balance: int) -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text='ℹ️ Инструкция', callback_data='information'),
-                InlineKeyboardButton(text=f'💎 {balance} ₽', callback_data='user_balance'),
+                InlineKeyboardButton(text=f'💎 {balance}₽', callback_data='user_balance'),
             ],
             [
                 InlineKeyboardButton(text='👾 Мой аккаунт', callback_data='customer_my_account'),

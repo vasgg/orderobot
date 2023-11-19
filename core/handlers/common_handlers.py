@@ -1,11 +1,10 @@
-from aiogram import Bot, F, Router, types
+from aiogram import F, Router, types
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
 from core.controllers.user_controllers import rename_user
 from core.database.models import User
-from core.keyboards.balance_keyboard import get_back_to_menu_and_pay_buttons
-from core.keyboards.common_keyboards import close_button, role_selector
+from core.keyboards.common_keyboards import close_button, get_back_to_menu_and_pay_buttons, role_selector
 from core.resources.dict import answer
 from core.resources.states import States
 
@@ -28,32 +27,23 @@ async def close_message(call: types.CallbackQuery) -> None:
 
 
 @router.callback_query(F.data == 'rename_account')
-async def rename_account_handler(
-    call: types.CallbackQuery, state: FSMContext, user: User
-) -> None:
+async def rename_account_handler(call: types.CallbackQuery, state: FSMContext, user: User) -> None:
     await state.set_state(States.rename_account)
-    msg = await call.message.answer(
-        text=answer['rename_account_reply'].format(user.fullname)
-    )
+    msg = await call.message.answer(text=answer['rename_account_reply'].format(user.fullname))
     await state.update_data(rename_account_message_id=msg.message_id)
     await call.answer()
 
 
 @router.message(States.rename_account)
-async def rename_account(
-    message: types.Message, state: FSMContext, bot: Bot, session
-) -> None:
+async def rename_account(message: types.Message, state: FSMContext, session) -> None:
     new_name = message.text
     await rename_user(message.from_user.id, new_name, session)
     await message.answer(
         text=answer['rename_account_success'].format(new_name),
-        reply_markup=close_button,
-    )
+        reply_markup=close_button)
     data = await state.get_data()
     await message.delete()
-    await bot.delete_message(
-        chat_id=message.from_user.id, message_id=data['rename_account_message_id']
-    )
+    await message.bot.delete_message(chat_id=message.from_user.id, message_id=data['rename_account_message_id'])
 
 
 @router.callback_query(F.data == 'user_balance')

@@ -216,9 +216,9 @@ async def publish_order_handler(
 
 
 @router.callback_query(F.data.startswith('forward_order_'))
-async def forward_order_handler(call: types.CallbackQuery, bot: Bot, session) -> None:
+async def forward_order_handler(call: types.CallbackQuery, session) -> None:
     order_id = int(call.data.split('_')[2])
-    await send_order_text_to_channel(bot, order_id, session)
+    await send_order_text_to_channel(call, order_id, session)
     await call.message.edit_text(
         text=answer['forward_order_reply'].format(settings.CHANNEL_LINK),
         reply_markup=back_button,

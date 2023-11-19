@@ -2,7 +2,7 @@ from collections import namedtuple
 from typing import Literal, NamedTuple, Union
 from urllib.parse import urlparse
 
-from aiogram import Bot, types
+from aiogram import types
 from aiogram.fsm.context import FSMContext
 import arrow
 from sqlalchemy import Result, delete, select, update
@@ -12,9 +12,9 @@ from core.database.models import Application, Order, User
 from core.resources.dict import answer
 
 
-async def send_order_text_to_channel(bot: Bot, order_id: int, session) -> None:
+async def send_order_text_to_channel(call: types.CallbackQuery, order_id: int, session) -> None:
     order = await get_order(order_id, session)
-    await bot.send_message(
+    await call.bot.send_message(
         chat_id=settings.CHANNEL_ID,
         text=answer["post_order"].format(
             order.id, order.name, order.budget, order.link, order.description
@@ -124,9 +124,7 @@ async def get_orders(
 
 
 async def create_draft(user_id: int, session) -> Order:
-    new_draft = Order(
-        customer_id=user_id,
-    )
+    new_draft = Order(customer_id=user_id)
     session.add(new_draft)
     session.flush()
     query = select(Order).filter(Order.customer_id == user_id, Order.status == 'draft')
