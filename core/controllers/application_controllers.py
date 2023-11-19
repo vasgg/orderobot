@@ -1,5 +1,6 @@
 from typing import Literal
 
+from aiogram import types
 import arrow
 from sqlalchemy import Result, delete, select
 
@@ -121,3 +122,9 @@ def get_applications_list_string(
 async def del_application(application_id: int, session) -> None:
     query = delete(Application).filter(Application.id == application_id)
     await session.execute(query)
+
+
+async def send_message(message: types.Message, receiver_id: int, text: str, reply_markup: types.InlineKeyboardMarkup) -> None:
+    await message.bot.send_message(chat_id=receiver_id,
+                                   text=text,
+                                   reply_markup=reply_markup)

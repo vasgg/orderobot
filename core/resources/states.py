@@ -15,3 +15,5 @@ class States(StatesGroup):
     fl_appl_charge = State()
     fl_appl_days = State()
     fl_appl_message = State()
+    fl_send_message = State()
+    customer_send_message = State()

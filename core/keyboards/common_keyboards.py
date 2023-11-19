@@ -1,5 +1,6 @@
 from typing import Literal
 
+from aiogram.fsm.context import FSMContext
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
@@ -145,3 +146,46 @@ def delete_record_keyboad(
             )
     keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
     return keyboard
+
+
+def get_answer_keyboard(application_id: int, mode: Literal['customer', 'freelancer']) -> InlineKeyboardMarkup:
+    match mode:
+        case 'customer':
+            return InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text='💬 Ответить', callback_data=f'fl_send_message:{application_id}'
+                        ),
+                    ],
+                    [
+                        InlineKeyboardButton(text='← Закрыть', callback_data='close')
+                    ],
+                ]
+            )
+        case 'freelancer':
+            return InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text='💬 Ответить', callback_data=f'customer_send_message:{application_id}'
+                        ),
+                    ],
+                    [
+                        InlineKeyboardButton(text='← Закрыть', callback_data='close')
+                    ],
+                ]
+            )
+
+
+async def get_back_to_menu_and_pay_buttons(state: FSMContext, amount) -> InlineKeyboardMarkup:
+    data = await state.get_data()
+    current_mode = data.get('current_mode', 'customer')
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text='← Главное меню', callback_data=current_mode),
+                InlineKeyboardButton(text='💳 Оплатить', callback_data=f'add_funds:{amount * 100}'),
+            ]
+        ]
+    )

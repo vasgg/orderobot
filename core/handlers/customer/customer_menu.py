@@ -2,8 +2,8 @@ from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
 
 from core.controllers.application_controllers import (
-    get_applications,
-    get_applications_list_string,
+    get_application, get_applications,
+    get_applications_list_string, send_message,
 )
 from core.controllers.order_controllers import (
     delete_published_order,
@@ -11,7 +11,7 @@ from core.controllers.order_controllers import (
     get_order,
     get_orders,
     get_orders_list_string,
-    send_order_text_to_customer,
+    get_user, send_order_text_to_customer,
 )
 from core.controllers.user_controllers import (
     get_deals_counter,
@@ -22,7 +22,7 @@ from core.keyboards.common_keyboards import (
     account_buttons,
     close_button,
     delete_record_keyboad,
-    get_order_actions_keyboard,
+    get_answer_keyboard, get_order_actions_keyboard,
     get_orders_keyboard,
 )
 from core.keyboards.customer.customer_keyboard import get_customer_keyboard
@@ -106,42 +106,55 @@ async def customer_delete_published_order(call: types.CallbackQuery, session) ->
     await call.answer()
 
 
-@router.callback_query(F.data == 'customer_applications')
+@router.callback_query(F.data.in_(['customer_applications', 'customer_messages']))
 async def customer_applications_handler(
     call: types.CallbackQuery, user: User, session
 ) -> None:
-    orders = await get_orders(
-        mode='my', user_id=user.id, status='published', session=session
-    )
-    applications = await get_applications(
-        session, mode='by_customer', customer_id=user.id
-    )
+    orders = await get_orders(mode='my', user_id=user.id, status='published', session=session)
+    applications = await get_applications(session, mode='by_customer', customer_id=user.id)
     text = answer['customer_applications_reply'] + get_applications_list_string(
-        applications=applications, orders=orders, mode="customer"
-    )
-    await call.message.answer(
-        text=text,
-        reply_markup=get_applications_keyboard(
-            orders=orders, applications=applications, mode="customer"
-        ),
-    )
+        applications=applications, orders=orders, mode="customer")
+    if call.data == 'customer_applications':
+        photo = types.FSInputFile(path='core/resources/pictures/applications.jpeg')
+        keyboard = get_applications_keyboard(
+            orders=orders, applications=applications, mode="customer")
+    else:
+        photo = types.FSInputFile(path='core/resources/pictures/messages.jpeg')
+        keyboard = get_applications_keyboard(
+            orders=orders, applications=applications, mode="customer_messages")
+    await call.message.answer_photo(photo=photo,
+                                    caption=text,
+                                    reply_markup=keyboard)
     await call.answer()
 
 
-# @router.callback_query(F.data == 'customer_messages')
-# async def customer_messages_handler(
-#     call: types.CallbackQuery, state: FSMContext, bot: Bot
-# ) -> None:
-#     ...
-#
-#
-# @router.callback_query(F.data == 'customer_drafts')
-# async def customer_drafts_handler(
-#     call: types.CallbackQuery, state: FSMContext, bot: Bot
-# ) -> None:
-#     ...
-#
-#
+@router.callback_query(F.data.startswith('customer_send_message:'))
+async def customer_send_message_handler(call: types.CallbackQuery, state: FSMContext) -> None:
+    application_id = int(call.data.split(":")[1])
+    msg = await call.message.answer(text=answer['customer_send_message_reply'])
+    await state.update_data(customer_message_application_id=application_id,
+                            customer_send_message_id=msg.message_id)
+    await state.set_state(States.customer_send_message)
+    await call.answer()
+
+
+@router.message(States.customer_send_message)
+async def customer_send_message(message: types.Message, state: FSMContext, session) -> None:
+    customer_text = message.text
+    data = await state.get_data()
+    application_id = data.get('customer_message_application_id')
+    application = await get_application(application_id, session)
+    customer = await get_user(application.customer_id, session)
+    freelancer = await get_user(application.freelancer_id, session)
+    text = answer['bot_send_message_reply'].format('Заказчик:', customer.fullname, application_id, customer_text)
+    await send_message(message, receiver_id=freelancer.telegram_id, text=text,
+                       reply_markup=get_answer_keyboard(mode='customer', application_id=application_id))
+    await message.delete()
+    await message.bot.delete_message(chat_id=message.from_user.id, message_id=data.get('customer_send_message_id'))
+    await message.answer(text=answer['bot_message_sent_reply'].format(customer_text, application_id, freelancer.fullname),
+                         reply_markup=close_button)
+
+
 @router.callback_query(F.data == 'customer_my_account')
 async def customer_my_account_handler(
     call: types.CallbackQuery, user: User, session
