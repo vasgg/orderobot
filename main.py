@@ -2,7 +2,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from core.config import settings
-from core.resources.middlewares import AuthMiddleware, SessionMiddleware
+from core.resources.middlewares import AuthMiddleware, SessionMiddleware, UpdatesDumperMiddleware
 from core.handlers.common_handlers import router as basic_router
 from core.handlers.payment_handlers import router as payment_router
 from core.handlers.customer.customer_menu import router as customer_router
@@ -21,6 +21,7 @@ def main():
     dispatcher.callback_query.middleware(SessionMiddleware())
     dispatcher.message.middleware(AuthMiddleware())
     dispatcher.callback_query.middleware(AuthMiddleware())
+    dispatcher.update.outer_middleware(UpdatesDumperMiddleware())
     dispatcher.startup.register(on_startup_notify)
     dispatcher.shutdown.register(on_shutdown_notify)
     dispatcher.include_routers(
