@@ -11,17 +11,12 @@ class Settings(BaseSettings):
     ADMIN_ID: int
     CHANNEL_ID: int
     CHANNEL_LINK: str
-    DB_USER: str
-    DB_PASSWORD: str
-    DB_HOST: str
-    DB_PORT: int
     DB_NAME: str
     echo: bool = True
 
     @property
-    def asyncpg_db_url(self) -> str:
-        # return f'postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
-        return f'postgresql+asyncpg://{self.DB_USER}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}'
+    def aiosqlite_db_url(self) -> str:
+        return f'sqlite+aiosqlite:///core/database/{self.DB_NAME}.db'
 
     class Config:
         env_file = '.env'

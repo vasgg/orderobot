@@ -6,6 +6,7 @@ from core.resources.middlewares import AuthMiddleware, SessionMiddleware, Update
 from core.handlers.common_handlers import router as basic_router
 from core.handlers.payment_handlers import router as payment_router
 from core.handlers.customer.customer_menu import router as customer_router
+from core.handlers.customer.customer_application import router as customer_app_menu_router
 from core.handlers.customer.create_order_menu import router as order_menu_router
 from core.handlers.freelancer.freelancer_menu import router as fl_router
 from core.handlers.freelancer.freelancer_application import router as fl_application_router
@@ -27,6 +28,7 @@ def main():
     dispatcher.include_routers(
         basic_router,
         customer_router,
+        customer_app_menu_router,
         fl_router,
         fl_application_router,
         order_menu_router,
