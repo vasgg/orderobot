@@ -49,7 +49,7 @@ async def rename_account(message: types.Message, state: FSMContext, session) -> 
 @router.callback_query(F.data == 'user_balance')
 async def customer_balance_handler(call: types.CallbackQuery, state: FSMContext) -> None:
     await call.message.answer_photo(photo=types.FSInputFile(path='core/resources/pictures/balance.jpeg'),
-                                    caption=answer['user_balance_reply'])
+                                    caption=answer['user_balance_reply'], reply_markup=close_button)
     await state.set_state(States.add_funds_to_balance)
     await call.answer()
 
@@ -58,6 +58,8 @@ async def customer_balance_handler(call: types.CallbackQuery, state: FSMContext)
 async def add_funds_to_balance_handler(message: types.Message, state: FSMContext) -> None:
     try:
         amount = int(message.text)
+        if amount < 93 or amount > 924472:
+            raise ValueError
         await message.answer(text=answer['check_balance_reply'].format('Вы хотите пополнить баланс на ', amount),
                              reply_markup=await get_back_to_menu_and_pay_buttons(state, amount))
         await state.set_state()

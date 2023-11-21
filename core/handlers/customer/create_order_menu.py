@@ -2,26 +2,24 @@ from aiogram import Bot, F, Router, types
 from aiogram.fsm.context import FSMContext
 
 from core.config import settings
-from core.controllers.order_controllers import (
-    check_order_before_publish,
-    delete_draft,
-    publish_order_to_db,
-    get_customer_draft,
-    save_params_to_draft,
-    send_order_text_to_channel,
-    send_order_text_to_customer,
-    validate_url,
-)
+from core.controllers.application_controllers import get_active_application, get_applications, toggle_application_activeness
+from core.controllers.common_controllers import change_order_status, send_message
+from core.controllers.order_controllers import (add_worker_to_order, check_balance_before_apply_worker, check_order_before_publish,
+                                                delete_draft, get_customer_draft, get_order, get_user, publish_order_to_db,
+                                                save_params_to_draft, send_order_text_to_channel, send_order_text_to_customer, validate_url)
+from core.controllers.user_controllers import change_user_balance
 from core.database.models import User
-from core.keyboards.customer.customer_keyboard import get_customer_keyboard
+from core.keyboards.applications_keyboard import get_executior_keyboard
+from core.keyboards.common_keyboards import close_button, delete_record_keyboad
+from core.keyboards.customer.customer_keyboard import get_customer_keyboard, main_menu_button
 from core.keyboards.customer.new_order_keyboard import (
     back_button,
     change_order_params_keyboard,
     get_publish_order_buttons,
     new_order_buttons,
 )
-from core.keyboards.common_keyboards import delete_record_keyboad
 from core.resources.dict import answer
+from core.resources.enums import OrderStatus, UserType
 from core.resources.states import States
 
 router = Router()
@@ -122,7 +120,7 @@ async def check_order_params_handler(
                 await state.update_data(edit_order_confirm_id=msg.message_id)
                 await state.set_state(States.new_order_draft)
             else:
-                await message.answer(answer['incorrect_url_reply'].format(message.text))
+                await message.answer(answer['incorrect_url_reply'].format(message.text), reply_markup=back_button)
 
 
 @router.callback_query(F.data == 'back_to_order_menu')
@@ -194,13 +192,10 @@ async def publish_order_handler(
     condition = check_order_before_publish(draft)
     if isinstance(condition, bool):
         await publish_order_to_db(draft, user, session)
-        await send_order_text_to_customer(
-            call=call,
-            order=draft,
-            mode='answer',
-            state=state,
-            markup=get_publish_order_buttons(draft.id),
-        )
+        text = answer["publish_order_reply"] + answer["post_order"].format(
+            draft.id, draft.name, draft.budget, draft.link, draft.description)
+        msg = await call.message.edit_text(text=text, reply_markup=get_publish_order_buttons(draft.id))
+        await state.update_data(published_message_id=msg.message_id)
     else:
         missing_conditions = []
         for field, value in condition._asdict().items():
@@ -221,7 +216,7 @@ async def forward_order_handler(call: types.CallbackQuery, session) -> None:
     await send_order_text_to_channel(call, order_id, session)
     await call.message.edit_text(
         text=answer['forward_order_reply'].format(settings.CHANNEL_LINK),
-        reply_markup=back_button,
+        reply_markup=main_menu_button,
     )
     await call.answer()
 
@@ -244,4 +239,30 @@ async def delete_draft_handler(call: types.CallbackQuery, user: User, session) -
     await call.message.edit_text(
         text=answer['customer_reply'], reply_markup=get_customer_keyboard(user.balance)
     )
+    await call.answer()
+
+
+@router.callback_query(F.data.startswith('apply_worker:'))
+async def apply_worker_handler(call: types.CallbackQuery, user: User, session) -> None:
+    application_id = int(call.data.split(':')[1])
+    application = await get_active_application(mode='by_app_id', application_id=application_id, session=session)
+    customer = await get_user(user_id=application.customer_id, session=session)
+    order = await get_order(application.order_id, session=session)
+    freelancer = application.freelancer
+    if not check_balance_before_apply_worker(application_fee=application.fee, user_balance=user.balance):
+        await call.message.answer(text=answer['insufficient_funds_reply'], reply_markup=close_button)
+        return
+    await change_user_balance(telegram_id=call.from_user.id, current_balance=user.balance, amount=application.fee,
+                              mode='subtract', session=session)
+    await change_order_status(entity=application.order, entity_id=application.order_id, status=OrderStatus.WIP, session=session)
+    await add_worker_to_order(order_id=application.order_id, worker_id=application.freelancer_id, session=session)
+    applications = await get_applications(order_id=application.order_id, mode='by_order', session=session)
+    for application in applications:
+        await toggle_application_activeness(application.id, session=session)
+    text_to_executor = answer['apply_worker_reply_to_fl'].format(customer.fullname, application.order_id, application.id, order.name,
+                                                                 order.description, application.fee, application.completion_days)
+    await send_message(message=call.message, receiver_id=freelancer.telegram_id,
+                       text=text_to_executor, reply_markup=get_executior_keyboard(application_id, mode=UserType.FREELANCER))
+    await call.message.edit_text(text=answer['apply_worker_reply_to_customer'],
+                                 reply_markup=get_executior_keyboard(application_id, mode=UserType.CUSTOMER))
     await call.answer()

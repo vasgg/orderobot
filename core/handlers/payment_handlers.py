@@ -2,9 +2,11 @@ from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
 
 from core.config import settings
-from core.controllers.user_controllers import add_balance_to_user
+from core.controllers.user_controllers import change_user_balance
 from core.database.models import User
-from core.keyboards.common_keyboards import close_button
+from core.keyboards.common_keyboards import role_selector
+from core.keyboards.customer.customer_keyboard import get_customer_keyboard
+from core.keyboards.freelancer.freelancer_keyboard import get_freelancer_keyboard
 from core.resources.dict import answer
 
 router = Router()
@@ -35,7 +37,16 @@ async def process_pre_checkout_query(pre_checkout_query: types.PreCheckoutQuery)
 @router.message(F.content_type == types.ContentType.SUCCESSFUL_PAYMENT)
 async def finish_payment(message: types.Message, state: FSMContext, user: User, session) -> None:
     data = await state.get_data()
-    await add_balance_to_user(telegram_id=message.from_user.id, amount=user.balance + data['added_funds_amount'], session=session)
-    await message.bot.send_message(chat_id=message.from_user.id,
-                                   text=answer['added_funds_reply'].format(data['added_funds_amount'], user.balance),
-                                   reply_markup=close_button)
+    await change_user_balance(telegram_id=message.from_user.id,
+                              current_balance=user.balance,
+                              amount=data['added_funds_amount'],
+                              mode='add',
+                              session=session)
+    try:
+        match data['current_mode']:
+            case 'freelancer':
+                await message.answer(text=answer["freelancer_reply"], reply_markup=get_freelancer_keyboard(user.balance))
+            case 'customer':
+                await message.answer(text=answer["customer_reply"], reply_markup=get_customer_keyboard(user.balance))
+    except KeyError:
+        await message.answer(text=answer["start_reply"], reply_markup=role_selector)
