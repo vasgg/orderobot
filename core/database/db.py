@@ -11,4 +11,4 @@ class DatabaseConnector:
         )
 
 
-db = DatabaseConnector(url=settings.asyncpg_db_url, echo=settings.echo)
+db = DatabaseConnector(url=settings.aiosqlite_db_url, echo=settings.echo)
