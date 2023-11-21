@@ -1,8 +1,8 @@
-"""create orders table
+"""create_orders_table
 
-Revision ID: 0ee211869e3f
-Revises: a5f4dcca328a
-Create Date: 2023-11-05 00:53:03.413641
+Revision ID: ad18ea202d0d
+Revises: d9ed7e1b6042
+Create Date: 2023-11-21 18:50:59.897613
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "0ee211869e3f"
-down_revision: Union[str, None] = "a5f4dcca328a"
+revision: str = "ad18ea202d0d"
+down_revision: Union[str, None] = "d9ed7e1b6042"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -24,18 +24,17 @@ def upgrade() -> None:
         "orders",
         sa.Column("customer_id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
-        sa.Column("status", sa.String(), nullable=False),
+        sa.Column(
+            "status",
+            sa.Enum("DRAFT", "PUBLISHED", "WIP", "DELETED", "DONE", name="orderstatus"),
+            nullable=False,
+        ),
         sa.Column("budget", sa.String(), nullable=False),
         sa.Column("description", sa.String(length=2083), nullable=False),
         sa.Column("link", sa.String(length=2083), nullable=True),
         sa.Column("worker_id", sa.Integer(), nullable=True),
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column(
-            "created_at",
-            sa.DateTime(),
-            server_default=sa.text("CURRENT_TIMESTAMP"),
-            nullable=False,
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["customer_id"], ["users.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["worker_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),

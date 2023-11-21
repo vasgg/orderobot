@@ -1,8 +1,8 @@
-"""create applications table
+"""create_applications_table
 
-Revision ID: 59b25628947e
-Revises: 0ee211869e3f
-Create Date: 2023-11-05 01:12:36.343266
+Revision ID: d80a413905bb
+Revises: ad18ea202d0d
+Create Date: 2023-11-21 18:51:19.961396
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "59b25628947e"
-down_revision: Union[str, None] = "0ee211869e3f"
+revision: str = "d80a413905bb"
+down_revision: Union[str, None] = "ad18ea202d0d"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -28,13 +28,9 @@ def upgrade() -> None:
         sa.Column("fee", sa.Integer(), nullable=True),
         sa.Column("completion_days", sa.Integer(), nullable=True),
         sa.Column("message", sa.String(length=2083), nullable=True),
+        sa.Column("is_active", sa.Boolean(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column(
-            "created_at",
-            sa.DateTime(),
-            server_default=sa.text("CURRENT_TIMESTAMP"),
-            nullable=False,
-        ),
+        sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["customer_id"], ["users.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["freelancer_id"], ["users.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["order_id"], ["orders.id"], ondelete="CASCADE"),
