@@ -9,14 +9,15 @@ def get_customer_keyboard(balance: int) -> InlineKeyboardMarkup:
                 InlineKeyboardButton(text='🔼 Заявки', callback_data='customer_applications'),
             ],
             [
-                InlineKeyboardButton(text='🗂️ Мои заказы', callback_data='customer_my_orders'),
+                InlineKeyboardButton(text='🗂️ Проекты', callback_data='customer_my_projects'),
                 InlineKeyboardButton(text='💬 Сообщения', callback_data='customer_messages'),
             ],
             [
-                InlineKeyboardButton(text='ℹ️ Инструкция', callback_data='information'),
+                InlineKeyboardButton(text='💼 Мои заказы', callback_data='customer_my_orders'),
                 InlineKeyboardButton(text=f'💎 {balance}₽', callback_data='user_balance'),
             ],
             [
+                InlineKeyboardButton(text='ℹ️ Инструкция', callback_data='information'),
                 InlineKeyboardButton(text='👾 Мой аккаунт', callback_data='customer_my_account'),
             ],
             [
@@ -31,6 +32,14 @@ application_receive_buttons = InlineKeyboardMarkup(
         [
             InlineKeyboardButton(text='← Закрыть', callback_data='close'),
             InlineKeyboardButton(text='🔼 Заявки', callback_data='customer_applications'),
+        ]
+    ]
+)
+
+main_menu_button = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(text='💼 Меню заказчика', callback_data='customer'),
         ]
     ]
 )

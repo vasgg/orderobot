@@ -5,9 +5,7 @@ def get_freelancer_keyboard(balance: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(
-                    text='🔎 Найти заказ', callback_data='fl_find_order'
-                ),
+                InlineKeyboardButton(text='🔎 Найти заказ', callback_data='fl_find_order'),
                 InlineKeyboardButton(text='🔼 Заявки', callback_data='fl_applications'),
             ],
             [
@@ -16,19 +14,13 @@ def get_freelancer_keyboard(balance: int) -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text='ℹ️ Инструкция', callback_data='information'),
-                InlineKeyboardButton(
-                    text=f'💎 {balance} ₽', callback_data='user_balance'
-                ),
+                InlineKeyboardButton(text=f'💎 {balance}₽', callback_data='user_balance'),
             ],
             [
-                InlineKeyboardButton(
-                    text='👾 Мой аккаунт', callback_data='fl_my_account'
-                ),
+                InlineKeyboardButton(text='👾 Мой аккаунт', callback_data='fl_my_account'),
             ],
             [
-                InlineKeyboardButton(
-                    text='🔁 Режим заказчика', callback_data='customer'
-                ),
+                InlineKeyboardButton(text='🔁 Режим заказчика', callback_data='customer'),
             ],
         ],
     )

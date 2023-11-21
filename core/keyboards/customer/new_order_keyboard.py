@@ -39,7 +39,7 @@ new_order_buttons = InlineKeyboardMarkup(
 back_button = InlineKeyboardMarkup(
     inline_keyboard=[
         [
-            InlineKeyboardButton(text='← Назад', callback_data='back_to_order_menu'),
+            InlineKeyboardButton(text='← Назад', callback_data='customer_make_order'),
         ]
     ]
 )
@@ -74,14 +74,3 @@ def change_order_params_keyboard(
             ],
         ]
     )
-
-# delete_draft_buttons: InlineKeyboardMarkup = InlineKeyboardMarkup(
-#     inline_keyboard=[
-#         [
-#             InlineKeyboardButton(
-#                 text='☑️ Я уверен', callback_data='confirm_delete_draft'
-#             ),
-#             InlineKeyboardButton(text='❌ Отмена', callback_data='close'),
-#         ]
-#     ]
-# )

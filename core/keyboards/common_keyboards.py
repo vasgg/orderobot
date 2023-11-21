@@ -140,7 +140,7 @@ def delete_record_keyboad(
                     InlineKeyboardButton(text='⌫ Отмена', callback_data='close'),
                     InlineKeyboardButton(
                         text='❌ Удалить',
-                        callback_data=f'delete_application:{record_id}'
+                        callback_data=f'fl_delete_application:{record_id}'
                     )
                 ]
             )
